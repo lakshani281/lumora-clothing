@@ -5,6 +5,7 @@ import { NewArrivals } from './components/NewArrivals';
 import { WhyChooseUs } from './components/WhyChooseUs';
 import { CustomSolutions } from './components/CustomSolutions';
 import { Newsletter } from './components/Newsletter';
+import { Footer } from './components/Footer';
 
 const App: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const App: React.FC = () => {
       <WhyChooseUs />
       <CustomSolutions />
       <Newsletter />
+      <Footer />
     </div>
   );
 };
