@@ -4,37 +4,19 @@ export interface Category {
   stylesCount: string;
   imageUrl: string;
 }
-export interface Category {
-  id: string;
-  title: string;
-  stylesCount: string;
-  imageUrl: string;
-}
 
 export interface Product {
   id: string;
   name: string;
+  category: 'men' | 'women' | 'kids' | 'custom';
   rating: number;
   reviewsCount: number;
-  price: string;
+  price: number;
+  priceFormatted: string;
   imageUrl: string;
   colors: string[];
-}
-export interface Category {
-  id: string;
-  title: string;
-  stylesCount: string;
-  imageUrl: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  rating: number;
-  reviewsCount: number;
-  price: string;
-  imageUrl: string;
-  colors: string[];
+  fabric?: string;
+  sizes?: string[];
 }
 
 export interface PromiseFeature {
