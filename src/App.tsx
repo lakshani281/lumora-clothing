@@ -15,13 +15,15 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#faf8f5] flex flex-col justify-between">
       <div>
-        {/* Navigation Bar */}
-        <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        {/* Home නොවන පිටුවලදී පමණක් Normal Navbar එක පෙන්වයි */}
+        {currentPage !== 'home' && (
+          <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        )}
 
         {/* Dynamic Page Content */}
         {currentPage === 'home' && (
           <main>
-            <HeroSection />
+            <HeroSection setCurrentPage={setCurrentPage} />
             <CategoriesSection />
             <NewArrivals />
             <WhyChooseUs />

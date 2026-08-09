@@ -1,59 +1,120 @@
 import React from 'react';
 import { Search, Heart, ShoppingBag, User } from 'lucide-react';
 
-export const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  setCurrentPage: (page: string) => void;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({ setCurrentPage }) => {
   return (
-    <div 
-      className="relative min-h-screen flex flex-col justify-between bg-cover bg-center text-white"
-      style={{ backgroundImage: `linear-gradient(rgba(10, 20, 15, 0.75), rgba(10, 20, 15, 0.75)), url('/images/hero-bg.jpg')` }}
-    >
-      <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full">
-        <div className="text-2xl font-bold tracking-widest flex items-center">
+    <section className="relative bg-stone-900 text-white min-h-screen flex flex-col justify-between overflow-hidden">
+      {/* Background Image with Dark Overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/images/prod-1.jpg"
+          alt="Lumora Clothing Hero"
+          className="w-full h-full object-cover opacity-35"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
+      </div>
+
+      {/* Embedded Translucent Floating Navbar */}
+      <nav className="relative z-20 max-w-7xl mx-auto w-full px-6 py-6 flex items-center justify-between">
+        {/* Brand Logo */}
+        <div 
+          className="text-xl font-serif font-bold tracking-wider cursor-pointer flex items-center space-x-2" 
+          onClick={() => setCurrentPage('home')}
+        >
           <span>Lumora</span>
-          <span className="text-xs font-light tracking-normal ml-2 text-gray-300">CLOTHING</span>
+          <span className="text-[10px] uppercase tracking-widest font-sans font-normal text-amber-500">
+            CLOTHING
+          </span>
         </div>
 
-        <div className="hidden md:flex items-center space-x-2 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-          <a href="#" className="bg-emerald-900/60 text-emerald-400 px-5 py-1.5 rounded-full text-sm font-medium border border-emerald-500/30">Home</a>
-          <a href="#" className="text-gray-200 hover:text-white px-4 py-1.5 text-sm font-medium transition">Products</a>
-          <a href="#" className="text-gray-200 hover:text-white px-4 py-1.5 text-sm font-medium transition">Bulk Orders</a>
-          <a href="#" className="text-gray-200 hover:text-white px-4 py-1.5 text-sm font-medium transition">About Us</a>
-          <a href="#" className="text-gray-200 hover:text-white px-4 py-1.5 text-sm font-medium transition">Contact</a>
+        {/* Center Pill Nav Links */}
+        <div className="hidden md:flex items-center space-x-6 bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 text-xs font-medium">
+          <button 
+            onClick={() => setCurrentPage('home')} 
+            className="bg-emerald-900/60 text-emerald-400 px-4 py-1.5 rounded-full transition"
+          >
+            Home
+          </button>
+          <button 
+            onClick={() => setCurrentPage('products')} 
+            className="text-white hover:text-amber-400 transition"
+          >
+            Products
+          </button>
+          <button 
+            onClick={() => setCurrentPage('bulk-orders')} 
+            className="text-white hover:text-amber-400 transition"
+          >
+            Bulk Orders
+          </button>
+          <button 
+            onClick={() => setCurrentPage('about-us')} 
+            className="text-white hover:text-amber-400 transition"
+          >
+            About Us
+          </button>
+          <button 
+            onClick={() => setCurrentPage('contact')} 
+            className="text-white hover:text-amber-400 transition"
+          >
+            Contact
+          </button>
         </div>
 
-        <div className="flex items-center space-x-5 text-gray-200">
-          <button className="hover:text-white transition"><Search size={20} /></button>
-          <button className="hover:text-white transition"><Heart size={20} /></button>
-          <button className="hover:text-white transition"><ShoppingBag size={20} /></button>
-          <button className="hover:text-white transition"><User size={20} /></button>
+        {/* Right Nav Icons */}
+        <div className="flex items-center space-x-5 text-white/90">
+          <button className="hover:text-amber-400 transition">
+            <Search size={18} />
+          </button>
+          <button className="hover:text-amber-400 transition">
+            <Heart size={18} />
+          </button>
+          <button 
+            onClick={() => setCurrentPage('products')} 
+            className="hover:text-amber-400 transition relative"
+          >
+            <ShoppingBag size={18} />
+          </button>
+          <button className="hover:text-amber-400 transition">
+            <User size={18} />
+          </button>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto text-center px-4 py-20 my-auto">
-        <div className="inline-block border border-amber-500/50 bg-amber-900/10 px-5 py-1.5 rounded-full text-amber-400 text-xs tracking-widest font-semibold uppercase mb-8">
+      {/* Hero Content */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center px-6 my-auto py-12">
+        <span className="inline-block border border-amber-500/50 text-amber-400 text-[11px] uppercase tracking-[0.2em] px-5 py-1.5 rounded-full font-semibold mb-8 backdrop-blur-xs">
           PREMIUM SRI LANKAN APPAREL
-        </div>
+        </span>
 
-        <h1 className="text-5xl md:text-7xl font-serif font-semibold leading-tight tracking-wide mb-6">
-          Wear Confidence.<br />
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold tracking-tight mb-6 leading-tight">
+          Wear Confidence. <br />
           <span className="italic font-normal">Wear Lumora.</span>
         </h1>
 
-        <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
+        <p className="text-stone-300 text-sm md:text-base max-w-xl mx-auto mb-10 font-light leading-relaxed">
           Premium T-shirts crafted with comfort, quality, and modern style for every occasion.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white font-medium px-8 py-3.5 rounded-full transition duration-300">
+          <button 
+            onClick={() => setCurrentPage('products')} 
+            className="w-full sm:w-auto bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium px-8 py-3 rounded-full text-xs transition shadow-lg"
+          >
             Shop Collection
           </button>
-          <button className="w-full sm:w-auto border border-gray-400 hover:border-white text-white font-medium px-8 py-3.5 rounded-full transition duration-300">
+          <button 
+            onClick={() => setCurrentPage('bulk-orders')} 
+            className="w-full sm:w-auto border border-white/40 hover:bg-white/10 text-white font-medium px-8 py-3 rounded-full text-xs transition backdrop-blur-xs"
+          >
             Bulk Orders
           </button>
         </div>
-      </main>
-
-      <div className="pb-6" />
-    </div>
+      </div>
+    </section>
   );
 };
