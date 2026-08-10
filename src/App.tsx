@@ -9,6 +9,7 @@ import { Newsletter } from './components/Newsletter';
 import { Footer } from './components/Footer';
 import { ProductsPage } from './pages/ProductsPage';
 import { BulkOrdersPage } from './pages/BulkOrdersPage';
+import { AboutUsPage } from './pages/AboutUsPage';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -16,12 +17,10 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#faf8f5] flex flex-col justify-between">
       <div>
-        {/* Home page නොවන අවස්ථාවලදී Normal Navbar එක පෙන්වයි */}
         {currentPage !== 'home' && (
           <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         )}
 
-        {/* Dynamic Page Content */}
         {currentPage === 'home' && (
           <main>
             <HeroSection setCurrentPage={setCurrentPage} />
@@ -45,9 +44,16 @@ const App: React.FC = () => {
           </main>
         )}
 
+        {currentPage === 'about-us' && (
+          <main>
+            <AboutUsPage setCurrentPage={setCurrentPage} />
+          </main>
+        )}
+
         {currentPage !== 'home' &&
           currentPage !== 'products' &&
-          currentPage !== 'bulk-orders' && (
+          currentPage !== 'bulk-orders' &&
+          currentPage !== 'about-us' && (
             <div className="max-w-7xl mx-auto px-6 py-24 text-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2 capitalize">
                 {currentPage.replace('-', ' ')}
@@ -57,7 +63,6 @@ const App: React.FC = () => {
           )}
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
