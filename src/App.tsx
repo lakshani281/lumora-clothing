@@ -10,6 +10,7 @@ import { Footer } from './components/Footer';
 import { ProductsPage } from './pages/ProductsPage';
 import { BulkOrdersPage } from './pages/BulkOrdersPage';
 import { AboutUsPage } from './pages/AboutUsPage';
+import { ContactPage } from './pages/ContactPage';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -50,10 +51,17 @@ const App: React.FC = () => {
           </main>
         )}
 
+        {currentPage === 'contact' && (
+          <main>
+            <ContactPage setCurrentPage={setCurrentPage} />
+          </main>
+        )}
+
         {currentPage !== 'home' &&
           currentPage !== 'products' &&
           currentPage !== 'bulk-orders' &&
-          currentPage !== 'about-us' && (
+          currentPage !== 'about-us' &&
+          currentPage !== 'contact' && (
             <div className="max-w-7xl mx-auto px-6 py-24 text-center">
               <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2 capitalize">
                 {currentPage.replace('-', ' ')}
