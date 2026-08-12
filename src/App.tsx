@@ -22,41 +22,47 @@ const App: React.FC = () => {
           <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
         )}
 
+        {/* Home Page View */}
         {currentPage === 'home' && (
           <main>
             <HeroSection setCurrentPage={setCurrentPage} />
-            <CategoriesSection />
-            <NewArrivals />
+            <CategoriesSection setCurrentPage={setCurrentPage} />
+            <NewArrivals setCurrentPage={setCurrentPage} />
             <WhyChooseUs />
-            <CustomSolutions />
+            <CustomSolutions setCurrentPage={setCurrentPage} />
             <Newsletter />
           </main>
         )}
 
+        {/* Products Page View */}
         {currentPage === 'products' && (
           <main>
             <ProductsPage />
           </main>
         )}
 
+        {/* Bulk Orders View */}
         {currentPage === 'bulk-orders' && (
           <main>
             <BulkOrdersPage setCurrentPage={setCurrentPage} />
           </main>
         )}
 
+        {/* About Us View */}
         {currentPage === 'about-us' && (
           <main>
             <AboutUsPage setCurrentPage={setCurrentPage} />
           </main>
         )}
 
+        {/* Contact View */}
         {currentPage === 'contact' && (
           <main>
             <ContactPage setCurrentPage={setCurrentPage} />
           </main>
         )}
 
+        {/* Fallback View */}
         {currentPage !== 'home' &&
           currentPage !== 'products' &&
           currentPage !== 'bulk-orders' &&
