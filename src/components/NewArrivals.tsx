@@ -108,10 +108,10 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
                   </div>
                 </div>
 
-                {/* Price & Colors */}
+                {/* Price & Colors (Rs. format එක එකතු කළ ස්ථානය) */}
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-emerald-800 font-semibold text-base">
-                    {product.price}
+                    {product.priceFormatted || `Rs. ${product.price.toLocaleString()}`}
                   </span>
 
                   <div className="flex items-center space-x-1.5">

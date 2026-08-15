@@ -10,7 +10,7 @@ import { Footer } from './components/Footer';
 import { ProductsPage } from './pages/ProductsPage';
 import { BulkOrdersPage } from './pages/BulkOrdersPage';
 import { AboutUsPage } from './pages/AboutUsPage';
-import { ContactPage } from './pages/ContactPage';
+import { ContactPage } from './pages/ContactPage'; // 1. ContactPage එක Import කළා
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -55,14 +55,14 @@ const App: React.FC = () => {
           </main>
         )}
 
-        {/* Contact View */}
+        {/* 2. Contact View එක එකතු කළා */}
         {currentPage === 'contact' && (
           <main>
             <ContactPage setCurrentPage={setCurrentPage} />
           </main>
         )}
 
-        {/* Fallback View */}
+        {/* Fallback Condition එකට currentPage !== 'contact' එකතු කළා */}
         {currentPage !== 'home' &&
           currentPage !== 'products' &&
           currentPage !== 'bulk-orders' &&
