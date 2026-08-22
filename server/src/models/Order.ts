@@ -11,7 +11,11 @@ export interface IOrderItem {
 }
 
 export interface IOrder extends Document {
-  user: Types.ObjectId | string;
+  user?: Types.ObjectId | string;
+  customer: {
+    name: string;
+    email: string;
+  };
   orderItems: IOrderItem[];
   shippingAddress: {
     address: string;
@@ -30,14 +34,18 @@ const orderSchema: Schema<IOrder> = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Login නොවී checkout කිරීමට හැකි වීමට
+    },
+    customer: {
+      name: { type: String, required: true },
+      email: { type: String, required: true },
     },
     orderItems: [
       {
         product: {
           type: Schema.Types.ObjectId,
           ref: 'Product',
-          required: true,
+          required: false,
         },
         title: { type: String, required: true },
         quantity: { type: Number, required: true },
