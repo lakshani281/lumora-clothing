@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Heart, ShoppingBag, User as UserIcon, LogOut } from 'lucide-react';
+import { Search, Heart, ShoppingBag, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { useCart } from '../context/CartContext';
 
@@ -10,7 +10,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null);
   const { totalItemsCount, setIsCartOpen } = useCart();
 
   useEffect(() => {
@@ -28,6 +28,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
     localStorage.removeItem('lumora_token');
     localStorage.removeItem('lumora_user');
     setUser(null);
+    if (currentPage === 'admin') {
+      setCurrentPage('home');
+    }
   };
 
   const navItems = [
@@ -75,10 +78,28 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
           </nav>
 
           {/* Right: Action Icons */}
-          <div className="flex items-center space-x-5 text-gray-800">
+          <div className="flex items-center space-x-4 md:space-x-5 text-gray-800">
+            
+            {/* User 'admin' ලෙස Login වී ඇත්නම් පමණක් Admin Button එක පෙන්වයි */}
+            {user && user.role === 'admin' && (
+              <button
+                onClick={() => setCurrentPage('admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                  currentPage === 'admin'
+                    ? 'bg-[#1b5e3f] text-white'
+                    : 'bg-stone-200/70 hover:bg-stone-200 text-stone-800'
+                }`}
+                title="Admin Portal"
+              >
+                <ShieldCheck size={15} />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            )}
+
             <button className="hover:text-emerald-800 transition p-1" title="Search">
               <Search size={20} strokeWidth={1.8} />
             </button>
+
             <button className="hover:text-emerald-800 transition p-1 relative" title="Wishlist">
               <Heart size={20} strokeWidth={1.8} />
             </button>

@@ -74,20 +74,16 @@ export const ProductsPage: React.FC = () => {
     });
   };
 
-  // Safe & Category-matched Filter Logic
+  // Safe & Exact Category-matched Filter Logic
   const filteredProducts = products.filter((product) => {
-    // 1. Category Check
+    // 1. Exact Category Check
     if (selectedCategory !== 'all') {
       const prodCat = (product.category || '').toLowerCase().trim();
       const selected = selectedCategory.toLowerCase().trim();
 
-      // Check if matches or if "men" matches general tops
-      const matchesCategory = 
-        prodCat === selected ||
-        prodCat.includes(selected) ||
-        selected.includes(prodCat);
-
-      if (!matchesCategory) return false;
+      if (prodCat !== selected) {
+        return false;
+      }
     }
 
     // 2. Price Check

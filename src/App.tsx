@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { CategoriesSection } from './components/CategoriesSection';
@@ -11,11 +11,33 @@ import { ProductsPage } from './pages/ProductsPage';
 import { BulkOrdersPage } from './pages/BulkOrdersPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { ContactPage } from './pages/ContactPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { CartProvider } from './context/CartContext';
 import { CartDrawer } from './components/CartDrawer';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<string>('home');
+  // Browser URL එක /admin ද කියා ආරම්භයේදීම හඳුනා ගැනීම
+  const getInitialPage = () => {
+    const path = window.location.pathname.replace('/', '');
+    if (path === 'admin') return 'admin';
+    if (path === 'products') return 'products';
+    if (path === 'bulk-orders') return 'bulk-orders';
+    if (path === 'about-us') return 'about-us';
+    if (path === 'contact') return 'contact';
+    return 'home';
+  };
+
+  const [currentPage, setCurrentPage] = useState<string>(getInitialPage());
+
+  // URL එක වෙනස් වන විට page එක update කිරීම
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.replace('/', '');
+      if (path === 'admin') setCurrentPage('admin');
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
 
   return (
     <CartProvider>
@@ -65,12 +87,20 @@ const App: React.FC = () => {
             </main>
           )}
 
+          {/* Admin Dashboard View */}
+          {currentPage === 'admin' && (
+            <main>
+              <AdminDashboardPage />
+            </main>
+          )}
+
           {/* Fallback Condition */}
           {currentPage !== 'home' &&
             currentPage !== 'products' &&
             currentPage !== 'bulk-orders' &&
             currentPage !== 'about-us' &&
-            currentPage !== 'contact' && (
+            currentPage !== 'contact' &&
+            currentPage !== 'admin' && (
               <div className="max-w-7xl mx-auto px-6 py-24 text-center">
                 <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2 capitalize">
                   {currentPage.replace('-', ' ')}
