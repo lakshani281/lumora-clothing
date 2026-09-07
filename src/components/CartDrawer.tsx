@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, Truck, CreditCard, CheckCircle, LogIn, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, Trash2, ShoppingBag, CheckCircle, LogIn, Building2, UploadCloud, FileCheck, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import API from '../services/api';
 
@@ -9,20 +9,16 @@ export const CartDrawer: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [showCardModal, setShowCardModal] = useState(false);
 
   // Checkout Form State
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [phone, setPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'Card'>('COD');
 
-  // Dummy Card Form State
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  // Payment Slip Upload State
+  const [slipImage, setSlipImage] = useState<string>('');
+  const [fileName, setFileName] = useState<string>('');
 
   if (!isCartOpen) return null;
 
@@ -38,7 +34,23 @@ export const CartDrawer: React.FC = () => {
     setIsCheckingOut(true);
   };
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit. Please upload a smaller image.');
+        return;
+      }
+      setFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSlipImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -47,15 +59,13 @@ export const CartDrawer: React.FC = () => {
       return;
     }
 
-    if (paymentMethod === 'Card') {
-      setShowCardModal(true);
-    } else {
-      executeOrderPlacement('COD');
+    if (!slipImage) {
+      setError('Please upload your payment deposit slip or transfer screenshot to continue.');
+      return;
     }
-  };
 
-  const executeOrderPlacement = async (finalPaymentMethod: 'COD' | 'Card') => {
     setLoading(true);
+
     try {
       const orderData = {
         customer: {
@@ -73,7 +83,8 @@ export const CartDrawer: React.FC = () => {
           image: item.image,
         })),
         totalAmount,
-        paymentMethod: finalPaymentMethod,
+        paymentMethod: 'Bank Transfer',
+        paymentSlip: slipImage,
       };
 
       const response = await API.post('/orders', orderData, {
@@ -81,7 +92,6 @@ export const CartDrawer: React.FC = () => {
       });
 
       if (response.data.success || response.data.order) {
-        setShowCardModal(false);
         setOrderSuccess(true);
         clearCart();
       }
@@ -90,25 +100,14 @@ export const CartDrawer: React.FC = () => {
       setError(err.response?.data?.message || 'Failed to place order. Try again.');
     } finally {
       setLoading(false);
-      setIsProcessingPayment(false);
     }
-  };
-
-  const handleSimulatedCardPay = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessingPayment(true);
-    setTimeout(() => {
-      executeOrderPlacement('Card');
-    }, 1500);
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity" 
-        onClick={() => {
-          if (!showCardModal) setIsCartOpen(false);
-        }} 
+        onClick={() => setIsCartOpen(false)} 
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
@@ -126,7 +125,6 @@ export const CartDrawer: React.FC = () => {
                 setIsCartOpen(false); 
                 setIsCheckingOut(false); 
                 setOrderSuccess(false); 
-                setShowCardModal(false);
               }} 
               className="text-stone-400 hover:text-stone-700 transition"
             >
@@ -139,8 +137,8 @@ export const CartDrawer: React.FC = () => {
               <div className="text-center py-12 space-y-4">
                 <CheckCircle size={60} className="text-[#1b5e3f] mx-auto animate-bounce" />
                 <h3 className="text-xl font-serif font-bold text-stone-900">Order Placed Successfully!</h3>
-                <p className="text-xs text-stone-600">
-                  Thank you for shopping with Lumora Clothing. Your order has been recorded in the database.
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Thank you for shopping with Lumora Clothing. We have received your payment slip and will verify it before dispatching your package.
                 </p>
                 <button 
                   onClick={() => { 
@@ -212,33 +210,46 @@ export const CartDrawer: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-2">Payment Method</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      onClick={() => setPaymentMethod('COD')}
-                      className={`border p-2.5 rounded-xl cursor-pointer flex items-center space-x-2 text-xs transition ${
-                        paymentMethod === 'COD'
-                          ? 'border-[#1b5e3f] bg-[#1b5e3f]/5 text-[#1b5e3f] font-bold'
-                          : 'border-stone-200 text-stone-600'
-                      }`}
-                    >
-                      <Truck size={16} />
-                      <span>COD</span>
-                    </div>
-
-                    <div
-                      onClick={() => setPaymentMethod('Card')}
-                      className={`border p-2.5 rounded-xl cursor-pointer flex items-center space-x-2 text-xs transition ${
-                        paymentMethod === 'Card'
-                          ? 'border-[#1b5e3f] bg-[#1b5e3f]/5 text-[#1b5e3f] font-bold'
-                          : 'border-stone-200 text-stone-600'
-                      }`}
-                    >
-                      <CreditCard size={16} />
-                      <span>Online Card</span>
-                    </div>
+                {/* Bank Account Details Card */}
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center space-x-2 text-[#1b5e3f] font-semibold text-xs">
+                    <Building2 size={16} />
+                    <span>Direct Bank Deposit / Transfer Details</span>
                   </div>
+                  <div className="text-[11px] text-stone-600 space-y-1 font-mono">
+                    <p><span className="font-sans text-stone-400">Bank:</span> Commercial Bank</p>
+                    <p><span className="font-sans text-stone-400">Account Name:</span> Lumora Clothing</p>
+                    <p><span className="font-sans text-stone-400">Account No:</span> 8012345678</p>
+                    <p><span className="font-sans text-stone-400">Branch:</span> Panadura Branch</p>
+                  </div>
+                </div>
+
+                {/* Payment Slip Upload Box */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                    Upload Payment Slip / Screenshot <span className="text-red-500">*</span>
+                  </label>
+                  <label className="border-2 border-dashed border-stone-300 hover:border-[#1b5e3f] rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition bg-stone-50/50 group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      required
+                    />
+                    {fileName ? (
+                      <div className="flex items-center space-x-2 text-[#1b5e3f] font-medium text-xs">
+                        <FileCheck size={18} />
+                        <span className="truncate max-w-[200px]">{fileName}</span>
+                      </div>
+                    ) : (
+                      <div className="text-center space-y-1">
+                        <UploadCloud size={22} className="mx-auto text-stone-400 group-hover:text-[#1b5e3f] transition" />
+                        <p className="text-xs text-stone-600 font-medium">Click to select receipt image</p>
+                        <p className="text-[10px] text-stone-400">PNG, JPG or Screenshot (Max 5MB)</p>
+                      </div>
+                    )}
+                  </label>
                 </div>
               </form>
             ) : cart.length === 0 ? (
@@ -297,10 +308,17 @@ export const CartDrawer: React.FC = () => {
                   <button 
                     type="submit" 
                     form="checkout-form" 
-                    disabled={loading} 
+                    disabled={loading || !slipImage} 
                     className="w-2/3 bg-[#1b5e3f] hover:bg-[#14472f] text-white py-3 rounded-xl text-xs font-semibold disabled:opacity-50 transition shadow-md flex items-center justify-center space-x-2"
                   >
-                    <span>{paymentMethod === 'Card' ? 'Proceed to Pay' : 'Confirm Order'}</span>
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Submitting Order...</span>
+                      </>
+                    ) : (
+                      <span>Confirm Order with Slip</span>
+                    )}
                   </button>
                 </div>
               ) : (
@@ -309,102 +327,8 @@ export const CartDrawer: React.FC = () => {
                   className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white py-3 rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition shadow-md"
                 >
                   <span>Proceed to Checkout</span>
-                  <ArrowRight size={16} />
                 </button>
               )}
-            </div>
-          )}
-
-          {/* Clean In-App Card Payment Modal */}
-          {showCardModal && (
-            <div className="absolute inset-0 bg-white z-50 flex flex-col justify-between p-6 animate-in fade-in zoom-in-95 duration-200">
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck size={22} className="text-[#1b5e3f]" />
-                    <h3 className="font-bold text-stone-900 text-base">Secure Card Checkout</h3>
-                  </div>
-                  <button onClick={() => setShowCardModal(false)} className="text-stone-400 hover:text-stone-700">
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="bg-[#1b5e3f]/5 border border-[#1b5e3f]/20 p-3.5 rounded-2xl mb-6">
-                  <div className="flex justify-between text-xs text-stone-600 mb-1">
-                    <span>Payable Amount:</span>
-                    <span className="font-bold text-[#1b5e3f] text-sm">Rs. {totalAmount.toLocaleString()}</span>
-                  </div>
-                  <p className="text-[11px] text-stone-500">Encrypted 256-bit Sandbox Payment Gateway</p>
-                </div>
-
-                <form onSubmit={handleSimulatedCardPay} id="card-pay-form" className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-semibold text-stone-700 mb-1">Card Number</label>
-                    <input 
-                      type="text" 
-                      required 
-                      maxLength={19}
-                      placeholder="4000 1234 5678 9010" 
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 font-mono text-sm focus:outline-none focus:border-[#1b5e3f]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-stone-700 mb-1">Expiry Date</label>
-                      <input 
-                        type="text" 
-                        required 
-                        maxLength={5}
-                        placeholder="MM/YY" 
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-[#1b5e3f]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-stone-700 mb-1">CVV / CVC</label>
-                      <input 
-                        type="password" 
-                        required 
-                        maxLength={3}
-                        placeholder="123" 
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-[#1b5e3f]"
-                      />
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-              <div className="space-y-2 pt-4">
-                <button
-                  type="submit"
-                  form="card-pay-form"
-                  disabled={isProcessingPayment}
-                  className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white py-3.5 rounded-xl text-xs font-semibold shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 transition"
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Verifying & Charging Card...</span>
-                    </>
-                  ) : (
-                    <span>Pay Rs. {totalAmount.toLocaleString()}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCardModal(false)}
-                  disabled={isProcessingPayment}
-                  className="w-full py-2.5 text-stone-500 hover:text-stone-800 text-xs font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
           )}
 
