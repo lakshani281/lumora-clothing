@@ -2,14 +2,19 @@ import { Response } from 'express';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// @desc    Create New Order (Guest or Logged-in)
+// @desc    Create New Order with Payment Slip (Guest or Logged-in)
 // @route   POST /api/orders
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { customer, orderItems, shippingAddress, totalAmount, paymentMethod } = req.body;
+    const { customer, orderItems, shippingAddress, totalAmount, paymentSlip } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       res.status(400).json({ message: 'No order items provided' });
+      return;
+    }
+
+    if (!paymentSlip) {
+      res.status(400).json({ message: 'Payment slip is required to place an order' });
       return;
     }
 
@@ -21,7 +26,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       orderItems,
       shippingAddress,
       totalAmount,
-      paymentMethod: paymentMethod || 'COD',
+      paymentMethod: 'Bank Transfer',
+      paymentSlip,
+      paymentStatus: 'Pending Verification',
       status: 'Pending',
     };
 
@@ -79,6 +86,28 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     }
 
     res.json({ success: true, message: 'Order status updated', order });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Update Payment Status (Admin only: Verify or Reject slip)
+// @route   PATCH /api/orders/:id/payment-status
+export const updatePaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { paymentStatus } = req.body; // 'Verified' | 'Rejected' | 'Pending Verification'
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus },
+      { new: true }
+    );
+
+    if (!order) {
+      res.status(404).json({ message: 'Order not found' });
+      return;
+    }
+
+    res.json({ success: true, message: 'Payment status updated', order });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

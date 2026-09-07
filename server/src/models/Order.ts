@@ -24,7 +24,9 @@ export interface IOrder extends Document {
     phone: string;
   };
   totalAmount: number;
-  paymentMethod: 'COD' | 'Card';
+  paymentMethod: 'Bank Transfer';
+  paymentSlip: string; // Receipt / Slip image එක (Base64 හෝ URL)
+  paymentStatus: 'Pending Verification' | 'Verified' | 'Rejected';
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: Date;
 }
@@ -34,7 +36,7 @@ const orderSchema: Schema<IOrder> = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: false, // Login නොවී checkout කිරීමට හැකි වීමට
+      required: false,
     },
     customer: {
       name: { type: String, required: true },
@@ -67,8 +69,16 @@ const orderSchema: Schema<IOrder> = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['COD', 'Card'],
-      default: 'COD',
+      default: 'Bank Transfer',
+    },
+    paymentSlip: {
+      type: String,
+      required: true, // Slip එක අනිවාර්යයි
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['Pending Verification', 'Verified', 'Rejected'],
+      default: 'Pending Verification',
     },
     status: {
       type: String,
