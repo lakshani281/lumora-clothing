@@ -100,7 +100,7 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
                 <div>
                   <p className="text-xs text-stone-500 font-medium">Phone</p>
                   <p className="font-bold text-stone-800 text-sm">
-                    +944262874
+                    +94 714262874
                   </p>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
                 <div>
                   <p className="text-xs text-stone-500 font-medium">Email</p>
                   <p className="font-bold text-stone-800 text-sm break-all">
-                    lumoraclothingpvt(Ltd)@gmail.com
+                    lumoraclothing15@gmail.com
                   </p>
                 </div>
               </div>

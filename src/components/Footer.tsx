@@ -50,8 +50,8 @@ export const Footer: React.FC = () => {
         <div>
           <h4 className="text-white text-xs font-semibold uppercase tracking-wider mb-5">CONTACT</h4>
           <div className="space-y-3 text-sm text-gray-400">
-            <p className="text-gray-200 font-medium">+944262874</p>
-            <p className="hover:text-white transition">lumoraclothingpvt(Ltd)@gmail.com</p>
+            <p className="text-gray-200 font-medium">+94 714262874</p>
+            <p className="hover:text-white transition">lumoraclothing15@gmail.com</p>
           </div>
         </div>
 
