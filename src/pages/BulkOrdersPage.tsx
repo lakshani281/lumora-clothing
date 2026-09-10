@@ -29,7 +29,7 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
     e.preventDefault();
 
     // Lumora Owner ගේ WhatsApp අංකය (Country code 94 සමඟ)
-    const ownerWhatsAppNumber = '94703351918';
+    const ownerWhatsAppNumber = '94783461824';
 
     const message = 
       `*New Bulk Order Inquiry - Lumora Clothing*%0A%0A` +
