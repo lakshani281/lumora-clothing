@@ -217,10 +217,10 @@ export const CartDrawer: React.FC = () => {
                     <span>Direct Bank Deposit / Transfer Details</span>
                   </div>
                   <div className="text-[11px] text-stone-600 space-y-1 font-mono">
-                    <p><span className="font-sans text-stone-400">Bank:</span> Commercial Bank</p>
-                    <p><span className="font-sans text-stone-400">Account Name:</span> Lumora Clothing</p>
-                    <p><span className="font-sans text-stone-400">Account No:</span> 8012345678</p>
-                    <p><span className="font-sans text-stone-400">Branch:</span> Panadura Branch</p>
+                    <p><span className="font-sans text-stone-400">Bank:</span> BOC</p>
+                    <p><span className="font-sans text-stone-400">Account Name:</span> W.K.J.I.KUMARA</p>
+                    <p><span className="font-sans text-stone-400">Account No:</span> 85860631</p>
+                    <p><span className="font-sans text-stone-400">Branch:</span> Ranna Branch</p>
                   </div>
                 </div>
 
