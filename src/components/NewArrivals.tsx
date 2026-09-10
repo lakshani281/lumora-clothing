@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
 import { Star } from 'lucide-react';
 import { newArrivalsData } from '../data/products';
+import { useCart } from '../context/CartContext';
 
-// 1. TypeScript Props Interface එක අර්ථ දැක්වීම (TypeScript Error එක විසඳීමට)
 interface NewArrivalsProps {
   setCurrentPage?: (page: string) => void;
 }
 
 export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
-  // Click කළ Product එකේ ID එක තබා ගැනීමට State එකක්
+  const { addToCart } = useCart();
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
   const handleCardClick = (id: string) => {
     setActiveProductId(activeProductId === id ? null : id);
   };
 
+  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+    e.stopPropagation();
+    
+    (addToCart as any)({
+      _id: product.id || product._id,
+      id: product.id || product._id,
+      productId: product.id || product._id,
+      name: product.name,
+      title: product.name,
+      price: product.price,
+      image: product.imageUrl,
+      imageUrl: product.imageUrl,
+      size: 'M',
+      quantity: 1,
+    });
+  };
+
   return (
     <section className="max-w-7xl mx-auto px-6 py-12">
-      {/* Header */}
       <div className="flex justify-between items-end mb-8">
         <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900">
           New Arrivals
         </h2>
         
-        {/* 2. View All Button එක Products Page එකට Route වන පරිදි සැකසීම */}
         <button 
           onClick={() => setCurrentPage && setCurrentPage('products')} 
           className="text-emerald-800 hover:text-emerald-900 font-medium text-sm underline underline-offset-4 decoration-emerald-800 cursor-pointer"
@@ -32,7 +47,6 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
         </button>
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {newArrivalsData.map((product) => {
           const isActive = activeProductId === product.id;
@@ -43,8 +57,6 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
               onClick={() => handleCardClick(product.id)}
               className="bg-white rounded-2xl overflow-hidden shadow-xs border border-gray-100 flex flex-col justify-between group cursor-pointer"
             >
-              
-              {/* Image Container with Buttons Overlay */}
               <div className="relative h-80 overflow-hidden bg-gray-100">
                 <img 
                   src={product.imageUrl} 
@@ -52,14 +64,12 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
 
-                {/* Dark Overlay gradient when active/hover */}
                 <div 
                   className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
                     isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`} 
                 />
 
-                {/* Buttons Container */}
                 <div 
                   className={`absolute inset-x-0 bottom-6 px-6 flex flex-col gap-3 transition-all duration-300 transform ${
                     isActive 
@@ -68,36 +78,20 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
                   }`}
                 >
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      alert(`${product.name} added to cart!`);
-                    }}
-                    className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-full text-sm transition duration-200 shadow-md cursor-pointer"
+                    onClick={(e) => handleAddToCart(e, product)}
+                    className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-full text-sm transition duration-200 shadow-md cursor-pointer flex items-center justify-center"
                   >
                     Add to Cart
                   </button>
-
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      alert(`Quick View: ${product.name}`);
-                    }}
-                    className="w-full bg-white/90 hover:bg-white text-gray-900 font-medium py-3 rounded-full text-sm backdrop-blur-xs transition duration-200 shadow-md cursor-pointer"
-                  >
-                    Quick View
-                  </button>
                 </div>
-
               </div>
 
-              {/* Product Info */}
               <div className="p-5 flex flex-col justify-between flex-grow">
                 <div>
                   <h3 className="font-semibold text-gray-900 text-base mb-1">
                     {product.name}
                   </h3>
 
-                  {/* Stars */}
                   <div className="flex items-center space-x-1 mb-4">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
@@ -108,7 +102,6 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
                   </div>
                 </div>
 
-                {/* Price & Colors (Rs. format එක එකතු කළ ස්ථානය) */}
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-emerald-800 font-semibold text-base">
                     {product.priceFormatted || `Rs. ${product.price.toLocaleString()}`}
@@ -124,9 +117,7 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ setCurrentPage }) => {
                     ))}
                   </div>
                 </div>
-
               </div>
-
             </div>
           );
         })}
