@@ -28,10 +28,9 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    
-    const ownerWhatsAppNumber = '94703351918'; 
+    // Lumora Owner ගේ WhatsApp අංකය (Country code 94 සමඟ)
+    const ownerWhatsAppNumber = '94703351918';
 
-    
     const message = 
       `*New Bulk Order Inquiry - Lumora Clothing*%0A%0A` +
       `🏢 *Company:* ${formData.companyName}%0A` +
@@ -44,22 +43,8 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
       `🎨 *Print Method:* ${formData.printingMethod || 'Not specified'}%0A` +
       `📝 *Notes:* ${formData.specialRequirements || 'None'}`;
 
-    // WhatsApp window එක open කිරීම
-    window.open(`https://wa.me/${ownerWhatsAppNumber}?text=${message}`, '_blank');
-
-    alert('Thank you! Redirecting to send your inquiry directly to our team via WhatsApp.');
-
-    setFormData({
-      companyName: '',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      productType: '',
-      quantity: '',
-      fabric: '',
-      printingMethod: '',
-      specialRequirements: '',
-    });
+    // WhatsApp එකට redirect කිරීම
+    window.location.href = `https://wa.me/${ownerWhatsAppNumber}?text=${message}`;
   };
 
   const industries = [
@@ -180,7 +165,7 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
             Request a Quote
           </h2>
           <p className="text-stone-600 text-sm">
-            Fill out the form and our team will respond within 24 hours.
+            Fill out the form and submit directly via WhatsApp.
           </p>
         </div>
 
