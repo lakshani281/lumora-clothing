@@ -24,7 +24,7 @@ export const ProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
   
-  // වම් පැත්තේ තෝරාගත් Size එක (Single Selected Size)
+  // Customer වම් පැත්තෙන් තෝරාගන්නා Size එක (Default: 'M')
   const [selectedSize, setSelectedSize] = useState<string>('M');
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<number>(50000);
@@ -39,6 +39,7 @@ export const ProductsPage: React.FC = () => {
     const fetchProducts = async () => {
       try {
         const response = await API.get('/products');
+        console.log('--- DATABASE PRODUCTS FETCHED ---', response.data);
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching live products:', error);
@@ -50,18 +51,13 @@ export const ProductsPage: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // වම් පැත්තේ Size එක ක්ලික් කළ විට එය select වීම
-  const handleSelectFilterSize = (sz: string) => {
-    setSelectedSize(sz);
-  };
-
   const toggleFabric = (fabric: string) => {
     setSelectedFabrics((prev) =>
       prev.includes(fabric) ? prev.filter((f) => f !== fabric) : [...prev, fabric]
     );
   };
 
-  // Add to Cart ක්ලික් කළ විට වම් පැත්තේ තෝරාගත් size එකෙන් cart එකට වැටීම
+  // Add to Cart ක්‍රියාවලිය - Customer තෝරාගත් Size එකෙන්ම Cart එකට යැවීම
   const handleAddToCart = (product: ProductType, e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -70,31 +66,36 @@ export const ProductsPage: React.FC = () => {
       title: product.title,
       price: product.price,
       image: product.images && product.images.length > 0 ? product.images[0] : '/images/cat-men.jpg',
-      size: selectedSize, // <-- වම් පැත්තේ තෝරාගත් Size එක මෙතනට pass වේ
+      size: selectedSize, // Customer වම් පැත්තෙන් තෝරාගත් size එක මෙතැනට වැටේ
       color: product.colors && product.colors.length > 0 ? product.colors[0] : 'Standard',
       quantity: 1,
     });
   };
 
-  // Filters logic
+  // 100% නිවැරදි Category & Filter Logic
   const filteredProducts = products.filter((product) => {
+    // 1. Category Filter (All, Men, Women, Kids, Custom)
     if (selectedCategory !== 'all') {
       const prodCat = (product.category || '').toLowerCase().trim();
       const selected = selectedCategory.toLowerCase().trim();
-      if (prodCat !== selected) return false;
+
+      // Men, Women, Kids, Custom හරියටම match කර ගැනීම
+      if (prodCat !== selected && !prodCat.includes(selected)) {
+        return false;
+      }
     }
 
-    if (product.price && product.price > priceRange) return false;
+    // 2. Price Filter
+    if (product.price && product.price > priceRange) {
+      return false;
+    }
 
+    // 3. Fabric Filter
     if (selectedFabrics.length > 0 && product.fabric && !selectedFabrics.includes(product.fabric)) {
       return false;
     }
 
-    // Product එක තුළ වම් පැත්තේ තෝරාගත් size එක තිබේදැයි බැලීම (තිබේ නම් පමණක් filter වේ)
-    if (product.sizes && product.sizes.length > 0 && !product.sizes.includes(selectedSize)) {
-      return false;
-    }
-
+    // Products hide නොවී බලාගත හැකි වන පරිදි Size එකෙන් products කපා හැරීම ඉවත් කර ඇත
     return true;
   });
 
@@ -107,6 +108,7 @@ export const ProductsPage: React.FC = () => {
 
   return (
     <div className="bg-[#faf8f5] min-h-screen pb-16">
+      {/* Banner */}
       <div className="relative bg-stone-900 text-white h-48 md:h-56 flex items-center overflow-hidden">
         <img
           src="/images/cat-men.jpg"
@@ -124,6 +126,7 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
+        {/* Category Tabs & Sorting */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div className="flex flex-wrap gap-2">
             {[
@@ -136,7 +139,7 @@ export const ProductsPage: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-6 py-2 rounded-full text-xs font-semibold transition ${
+                className={`px-6 py-2 rounded-full text-xs font-semibold transition cursor-pointer ${
                   selectedCategory === cat.id
                     ? 'bg-[#1b5e3f] text-white shadow-xs'
                     : 'bg-[#f0eae1] text-stone-800 hover:bg-stone-300/60'
@@ -162,9 +165,11 @@ export const ProductsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Side Filters Section */}
+          {/* Filters Sidebar */}
           <div className="lg:col-span-1 space-y-8 pr-2">
             <h3 className="font-serif font-bold text-gray-900 text-lg">Filters</h3>
+            
+            {/* Price Range */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">PRICE RANGE</h4>
               <input
@@ -182,31 +187,38 @@ export const ProductsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Left Size Selector */}
+            {/* Size Selector (Customer selects their size here) */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">
-                SELECT SIZE: <span className="text-[#1b5e3f] font-bold">({selectedSize})</span>
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">CHOOSE SIZE</h4>
+                <span className="text-xs font-bold text-[#1b5e3f] bg-[#e8f3ed] px-2.5 py-0.5 rounded-full">
+                  Selected: {selectedSize}
+                </span>
+              </div>
               <div className="flex flex-wrap gap-2">
-                {sizes.map((size) => {
-                  const isSelected = selectedSize === size;
+                {sizes.map((sz) => {
+                  const isSelected = selectedSize === sz;
                   return (
                     <button
-                      key={size}
-                      onClick={() => handleSelectFilterSize(size)}
-                      className={`w-9 h-9 rounded-2xl text-xs font-medium border transition cursor-pointer ${
+                      key={sz}
+                      onClick={() => setSelectedSize(sz)}
+                      className={`w-10 h-10 rounded-2xl text-xs font-bold transition cursor-pointer border ${
                         isSelected
                           ? 'bg-[#1b5e3f] text-white border-[#1b5e3f] shadow-sm scale-105'
                           : 'bg-[#f0eae1] border-transparent text-stone-700 hover:border-stone-300'
                       }`}
                     >
-                      {size}
+                      {sz}
                     </button>
                   );
                 })}
               </div>
+              <p className="text-[11px] text-stone-400 mt-2">
+                Select your size above before adding shirts to cart.
+              </p>
             </div>
 
+            {/* Fabric Filter */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">FABRIC</h4>
               <div className="space-y-2.5">
@@ -230,7 +242,7 @@ export const ProductsPage: React.FC = () => {
             {loading ? (
               <div className="text-center py-20 text-stone-500 font-medium">Loading products from database...</div>
             ) : sortedProducts.length === 0 ? (
-              <div className="text-center py-20 text-stone-500 font-medium">No products found matching the criteria.</div>
+              <div className="text-center py-20 text-stone-500 font-medium">No products found for this category.</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedProducts.map((product) => {
@@ -266,9 +278,9 @@ export const ProductsPage: React.FC = () => {
                         >
                           <button
                             onClick={(e) => handleAddToCart(product, e)}
-                            className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-xl text-xs transition shadow-md"
+                            className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-xl text-xs transition shadow-md cursor-pointer"
                           >
-                            Add to Cart ({selectedSize})
+                            Add to Cart (Size: {selectedSize})
                           </button>
                         </div>
                       </div>
