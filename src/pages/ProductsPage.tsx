@@ -28,6 +28,9 @@ export const ProductsPage: React.FC = () => {
   const [priceRange, setPriceRange] = useState<number>(50000);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
+  // එක් එක් product එකට customer තෝරාගන්නා size එක තබා ගැනීමට state එකක්
+  const [productSelectedSizes, setProductSelectedSizes] = useState<{ [key: string]: string }>({});
+
   const { addToCart } = useCart();
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -37,7 +40,6 @@ export const ProductsPage: React.FC = () => {
     const fetchProducts = async () => {
       try {
         const response = await API.get('/products');
-        console.log('--- DATABASE PRODUCTS FETCHED ---', response.data);
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching live products:', error);
@@ -61,14 +63,24 @@ export const ProductsPage: React.FC = () => {
     );
   };
 
+  // Card එක උඩදී size එක select කරන function එක
+  const handleSelectProductSize = (productId: string, size: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProductSelectedSizes((prev) => ({ ...prev, [productId]: size }));
+  };
+
   const handleAddToCart = (product: ProductType, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Customer select කරපු size එක, නැත්නම් product එකේ තියෙන පළමු size එක
+    const chosenSize = productSelectedSizes[product._id] || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M');
+
     addToCart({
       productId: product._id,
       title: product.title,
       price: product.price,
       image: product.images && product.images.length > 0 ? product.images[0] : '/images/cat-men.jpg',
-      size: product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M',
+      size: chosenSize,
       color: product.colors && product.colors.length > 0 ? product.colors[0] : 'Standard',
       quantity: 1,
     });
@@ -76,7 +88,6 @@ export const ProductsPage: React.FC = () => {
 
   // Safe & Exact Category-matched Filter Logic
   const filteredProducts = products.filter((product) => {
-    // 1. Exact Category Check
     if (selectedCategory !== 'all') {
       const prodCat = (product.category || '').toLowerCase().trim();
       const selected = selectedCategory.toLowerCase().trim();
@@ -86,17 +97,14 @@ export const ProductsPage: React.FC = () => {
       }
     }
 
-    // 2. Price Check
     if (product.price && product.price > priceRange) {
       return false;
     }
 
-    // 3. Fabric Check
     if (selectedFabrics.length > 0 && product.fabric && !selectedFabrics.includes(product.fabric)) {
       return false;
     }
 
-    // 4. Size Check
     if (selectedSizes.length > 0 && product.sizes && !product.sizes.some((s) => selectedSizes.includes(s))) {
       return false;
     }
@@ -236,6 +244,8 @@ export const ProductsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedProducts.map((product) => {
                   const isActive = activeProductId === product._id;
+                  const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL'];
+                  const currentSelectedSize = productSelectedSizes[product._id] || availableSizes[0];
 
                   return (
                     <div
@@ -269,7 +279,7 @@ export const ProductsPage: React.FC = () => {
                             onClick={(e) => handleAddToCart(product, e)}
                             className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-xl text-xs transition shadow-md"
                           >
-                            Add to Cart
+                            Add to Cart ({currentSelectedSize})
                           </button>
                         </div>
                       </div>
@@ -284,6 +294,25 @@ export const ProductsPage: React.FC = () => {
                             ({product.reviewsCount || 1})
                           </span>
                         </div>
+
+                        {/* Size Selection Buttons */}
+                        <div className="flex items-center space-x-1.5 mb-3" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[11px] text-stone-400 mr-1">Size:</span>
+                          {availableSizes.map((sz) => (
+                            <button
+                              key={sz}
+                              onClick={(e) => handleSelectProductSize(product._id, sz, e)}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition ${
+                                currentSelectedSize === sz
+                                  ? 'bg-[#1b5e3f] text-white border-[#1b5e3f]'
+                                  : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-400'
+                              }`}
+                            >
+                              {sz}
+                            </button>
+                          ))}
+                        </div>
+
                         <p className="text-[#1b5e3f] font-bold text-sm">
                           Rs. {product.price.toLocaleString()}
                         </p>
