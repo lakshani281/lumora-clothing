@@ -23,13 +23,12 @@ export const ProductsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  
+  // වම් පැත්තේ තෝරාගත් Size එක (Single Selected Size)
+  const [selectedSize, setSelectedSize] = useState<string>('M');
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<number>(50000);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
-
-  // එක් එක් product එකට customer තෝරාගන්නා size එක තබා ගැනීමට state එකක්
-  const [productSelectedSizes, setProductSelectedSizes] = useState<{ [key: string]: string }>({});
 
   const { addToCart } = useCart();
 
@@ -51,10 +50,9 @@ export const ProductsPage: React.FC = () => {
     fetchProducts();
   }, []);
 
-  const toggleSize = (size: string) => {
-    setSelectedSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-    );
+  // වම් පැත්තේ Size එක ක්ලික් කළ විට එය select වීම
+  const handleSelectFilterSize = (sz: string) => {
+    setSelectedSize(sz);
   };
 
   const toggleFabric = (fabric: string) => {
@@ -63,49 +61,37 @@ export const ProductsPage: React.FC = () => {
     );
   };
 
-  // Card එක උඩදී size එක select කරන function එක
-  const handleSelectProductSize = (productId: string, size: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setProductSelectedSizes((prev) => ({ ...prev, [productId]: size }));
-  };
-
+  // Add to Cart ක්ලික් කළ විට වම් පැත්තේ තෝරාගත් size එකෙන් cart එකට වැටීම
   const handleAddToCart = (product: ProductType, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // Customer select කරපු size එක, නැත්නම් product එකේ තියෙන පළමු size එක
-    const chosenSize = productSelectedSizes[product._id] || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'M');
 
     addToCart({
       productId: product._id,
       title: product.title,
       price: product.price,
       image: product.images && product.images.length > 0 ? product.images[0] : '/images/cat-men.jpg',
-      size: chosenSize,
+      size: selectedSize, // <-- වම් පැත්තේ තෝරාගත් Size එක මෙතනට pass වේ
       color: product.colors && product.colors.length > 0 ? product.colors[0] : 'Standard',
       quantity: 1,
     });
   };
 
-  // Safe & Exact Category-matched Filter Logic
+  // Filters logic
   const filteredProducts = products.filter((product) => {
     if (selectedCategory !== 'all') {
       const prodCat = (product.category || '').toLowerCase().trim();
       const selected = selectedCategory.toLowerCase().trim();
-
-      if (prodCat !== selected) {
-        return false;
-      }
+      if (prodCat !== selected) return false;
     }
 
-    if (product.price && product.price > priceRange) {
-      return false;
-    }
+    if (product.price && product.price > priceRange) return false;
 
     if (selectedFabrics.length > 0 && product.fabric && !selectedFabrics.includes(product.fabric)) {
       return false;
     }
 
-    if (selectedSizes.length > 0 && product.sizes && !product.sizes.some((s) => selectedSizes.includes(s))) {
+    // Product එක තුළ වම් පැත්තේ තෝරාගත් size එක තිබේදැයි බැලීම (තිබේ නම් පමණක් filter වේ)
+    if (product.sizes && product.sizes.length > 0 && !product.sizes.includes(selectedSize)) {
       return false;
     }
 
@@ -176,6 +162,7 @@ export const ProductsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Left Side Filters Section */}
           <div className="lg:col-span-1 space-y-8 pr-2">
             <h3 className="font-serif font-bold text-gray-900 text-lg">Filters</h3>
             <div>
@@ -195,18 +182,21 @@ export const ProductsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Left Size Selector */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">SIZE</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-3">
+                SELECT SIZE: <span className="text-[#1b5e3f] font-bold">({selectedSize})</span>
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {sizes.map((size) => {
-                  const isSelected = selectedSizes.includes(size);
+                  const isSelected = selectedSize === size;
                   return (
                     <button
                       key={size}
-                      onClick={() => toggleSize(size)}
-                      className={`w-9 h-9 rounded-2xl text-xs font-medium border transition ${
+                      onClick={() => handleSelectFilterSize(size)}
+                      className={`w-9 h-9 rounded-2xl text-xs font-medium border transition cursor-pointer ${
                         isSelected
-                          ? 'bg-[#1b5e3f] text-white border-[#1b5e3f]'
+                          ? 'bg-[#1b5e3f] text-white border-[#1b5e3f] shadow-sm scale-105'
                           : 'bg-[#f0eae1] border-transparent text-stone-700 hover:border-stone-300'
                       }`}
                     >
@@ -235,6 +225,7 @@ export const ProductsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Products Grid */}
           <div className="lg:col-span-3">
             {loading ? (
               <div className="text-center py-20 text-stone-500 font-medium">Loading products from database...</div>
@@ -244,8 +235,6 @@ export const ProductsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedProducts.map((product) => {
                   const isActive = activeProductId === product._id;
-                  const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL'];
-                  const currentSelectedSize = productSelectedSizes[product._id] || availableSizes[0];
 
                   return (
                     <div
@@ -279,7 +268,7 @@ export const ProductsPage: React.FC = () => {
                             onClick={(e) => handleAddToCart(product, e)}
                             className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3 rounded-xl text-xs transition shadow-md"
                           >
-                            Add to Cart ({currentSelectedSize})
+                            Add to Cart ({selectedSize})
                           </button>
                         </div>
                       </div>
@@ -293,24 +282,6 @@ export const ProductsPage: React.FC = () => {
                           <span className="text-[11px] text-stone-400 ml-1">
                             ({product.reviewsCount || 1})
                           </span>
-                        </div>
-
-                        {/* Size Selection Buttons */}
-                        <div className="flex items-center space-x-1.5 mb-3" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-[11px] text-stone-400 mr-1">Size:</span>
-                          {availableSizes.map((sz) => (
-                            <button
-                              key={sz}
-                              onClick={(e) => handleSelectProductSize(product._id, sz, e)}
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition ${
-                                currentSelectedSize === sz
-                                  ? 'bg-[#1b5e3f] text-white border-[#1b5e3f]'
-                                  : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-400'
-                              }`}
-                            >
-                              {sz}
-                            </button>
-                          ))}
                         </div>
 
                         <p className="text-[#1b5e3f] font-bold text-sm">
