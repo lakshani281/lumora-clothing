@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 interface BulkOrdersPageProps {
-  setCurrentPage: (page: string) => void;
+  setCurrentPage?: (page: string) => void;
 }
 
 export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
@@ -27,7 +27,28 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Thank you for your inquiry! Our team will contact you within 24 hours.');
+
+    
+    const ownerWhatsAppNumber = '94703351918'; 
+
+    
+    const message = 
+      `*New Bulk Order Inquiry - Lumora Clothing*%0A%0A` +
+      `🏢 *Company:* ${formData.companyName}%0A` +
+      `👤 *Contact Person:* ${formData.contactPerson}%0A` +
+      `📞 *Phone:* ${formData.phone}%0A` +
+      `✉️ *Email:* ${formData.email}%0A` +
+      `👕 *Product:* ${formData.productType}%0A` +
+      `📦 *Quantity:* ${formData.quantity}%0A` +
+      `🧵 *Fabric:* ${formData.fabric || 'Not specified'}%0A` +
+      `🎨 *Print Method:* ${formData.printingMethod || 'Not specified'}%0A` +
+      `📝 *Notes:* ${formData.specialRequirements || 'None'}`;
+
+    // WhatsApp window එක open කිරීම
+    window.open(`https://wa.me/${ownerWhatsAppNumber}?text=${message}`, '_blank');
+
+    alert('Thank you! Redirecting to send your inquiry directly to our team via WhatsApp.');
+
     setFormData({
       companyName: '',
       contactPerson: '',
@@ -237,10 +258,10 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
                 className="w-full bg-[#f4f1ea] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1b5e3f] outline-none text-stone-700 cursor-pointer"
               >
                 <option value="">Select product</option>
-                <option value="round-neck">Round Neck T-Shirt</option>
-                <option value="polo">Polo T-Shirt</option>
-                <option value="v-neck">V-Neck T-Shirt</option>
-                <option value="hoodie">Hoodie</option>
+                <option value="Round Neck T-Shirt">Round Neck T-Shirt</option>
+                <option value="Polo T-Shirt">Polo T-Shirt</option>
+                <option value="V-Neck T-Shirt">V-Neck T-Shirt</option>
+                <option value="Hoodie">Hoodie</option>
               </select>
             </div>
 
@@ -272,9 +293,9 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
                 className="w-full bg-[#f4f1ea] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1b5e3f] outline-none text-stone-700 cursor-pointer"
               >
                 <option value="">Select fabric</option>
-                <option value="cotton">100% Cotton</option>
-                <option value="blend">Cotton Polyester Blend</option>
-                <option value="dri-fit">Performance Dri-Fit</option>
+                <option value="100% Cotton">100% Cotton</option>
+                <option value="Cotton Polyester Blend">Cotton Polyester Blend</option>
+                <option value="Performance Dri-Fit">Performance Dri-Fit</option>
               </select>
             </div>
 
@@ -289,10 +310,10 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
                 className="w-full bg-[#f4f1ea] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1b5e3f] outline-none text-stone-700 cursor-pointer"
               >
                 <option value="">Select method</option>
-                <option value="screen">Screen Printing</option>
-                <option value="dtg">DTG Printing</option>
-                <option value="embroidery">Embroidery</option>
-                <option value="heat-transfer">Heat Transfer</option>
+                <option value="Screen Printing">Screen Printing</option>
+                <option value="DTG Printing">DTG Printing</option>
+                <option value="Embroidery">Embroidery</option>
+                <option value="Heat Transfer">Heat Transfer</option>
               </select>
             </div>
           </div>
@@ -315,7 +336,7 @@ export const BulkOrdersPage: React.FC<BulkOrdersPageProps> = () => {
             type="submit"
             className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3.5 rounded-2xl flex items-center justify-center space-x-2 transition shadow-md cursor-pointer"
           >
-            <span>Request a Quote</span>
+            <span>Request a Quote via WhatsApp</span>
             <ArrowRight size={18} />
           </button>
         </form>
