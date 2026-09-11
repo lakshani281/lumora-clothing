@@ -3,22 +3,38 @@ import nodemailer from 'nodemailer';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// Nodemailer Transporter සකස් කිරීම
+// Railway ENETUNREACH මඟහැරීමට Port 587 (STARTTLS) සහ direct host භාවිතා කිරීම
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Port 587 සඳහා false විය යුතුය
   auth: {
     user: process.env.EMAIL_USER || 'lumoraclothing15@gmail.com',
-    pass: process.env.EMAIL_PASS, // Gmail App Password එක (.env එකෙන්)
+    pass: process.env.EMAIL_PASS, // Railway Variables හි ඇති Gmail App Password එක
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
 // Email යැවීමේ Helper Function එක
 const sendPaymentStatusEmail = async (order: any, status: string) => {
-  const recipientEmail = order.customer?.email || order.shippingAddress?.email;
-  const customerName = order.customer?.name || order.shippingAddress?.name || 'Valued Customer';
+  // Order එකේ customer, shippingAddress හෝ user populate වී ඇති email එක ලබා ගැනීම
+  const recipientEmail =
+    order.customer?.email ||
+    order.shippingAddress?.email ||
+    (order.user && typeof order.user === 'object' ? order.user.email : null);
+
+  const customerName =
+    order.customer?.name ||
+    order.shippingAddress?.name ||
+    (order.user && typeof order.user === 'object' ? order.user.name : null) ||
+    'Valued Customer';
+
   const orderId = order._id.toString().slice(-6).toUpperCase();
 
   if (!recipientEmail || recipientEmail === 'guest@lumora.lk') {
+    console.log(`No valid recipient email found for Order #${orderId}`);
     return;
   }
 
@@ -28,7 +44,7 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   if (status === 'Verified') {
     subject = `Payment Verified - Order #${orderId} | Lumora Clothing`;
     htmlContent = `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #1b5e3f;">Payment Confirmed!</h2>
         <p>Dear <strong>${customerName}</strong>,</p>
         <p>We are pleased to inform you that your bank transfer for Order <strong>#${orderId}</strong> has been successfully verified.</p>
@@ -41,7 +57,7 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   } else if (status === 'Rejected') {
     subject = `Payment Issue - Order #${orderId} | Lumora Clothing`;
     htmlContent = `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #c53030;">Payment Verification Failed</h2>
         <p>Dear <strong>${customerName}</strong>,</p>
         <p>We encountered an issue verifying the bank deposit slip uploaded for Order <strong>#${orderId}</strong>.</p>
@@ -56,12 +72,13 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"Lumora Clothing" <${process.env.EMAIL_USER || 'lumoraclothing15@gmail.com'}>`,
       to: recipientEmail,
       subject,
       html: htmlContent,
     });
+    console.log(`✓ Status email sent successfully to: ${recipientEmail} (Msg ID: ${info.messageId})`);
   } catch (err) {
     console.error('Failed to send status email:', err);
   }
@@ -160,18 +177,20 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 export const updatePaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { paymentStatus } = req.body; // 'Verified' | 'Rejected' | 'Pending Verification'
+    
+    // User විස්තරද සහිතව order එක සොයා update කිරීම
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { paymentStatus },
       { new: true }
-    );
+    ).populate('user', 'name email');
 
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
 
-    // Email එක පසුබිමෙන් ස්වයංක්‍රීයව Customer වෙත යවයි
+    // Email එක background එකෙන් යැවීම
     sendPaymentStatusEmail(order, paymentStatus);
 
     res.json({ success: true, message: 'Payment status updated', order });
