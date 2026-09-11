@@ -11,10 +11,10 @@ dotenv.config();
 const app: Application = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// CORS - Vercel frontend සහ preflight requests සඳහා නිදහස් අවසර ලබා දීම
+// CORS - PATCH method එකද ඇතුළත්ව සියලුම preflight requests සඳහා අවසර දීම
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
