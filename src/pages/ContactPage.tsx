@@ -11,6 +11,7 @@ interface FAQItem {
 
 export const ContactPage: React.FC<ContactPageProps> = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -58,16 +59,49 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Thank you for reaching out! We will contact you shortly.');
-    setFormData({
-      fullName: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-    });
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          // ඔබ Dashboard එකෙන් ලබාගත් Access Key එක මෙතැනට paste කරන්න
+          access_key: '86fdd4a9-5bb6-4231-bd84-b97c39c2713e',
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          from_name: 'Lumora Clothing Customer Inquiry',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Thank you for reaching out! Your message has been sent successfully.');
+        setFormData({
+          fullName: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: '',
+        });
+      } else {
+        alert(result.message || 'Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -143,15 +177,15 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
                 FOLLOW US
               </span>
               <div className="flex flex-wrap gap-3">
-                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors">
+                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors cursor-pointer">
                   <span>📘</span>
                   <span>Facebook</span>
                 </button>
-                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors">
+                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors cursor-pointer">
                   <span>📷</span>
                   <span>Instagram</span>
                 </button>
-                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors">
+                <button type="button" className="bg-[#f2eee9] hover:bg-stone-200 text-stone-800 px-4 py-2 rounded-full text-xs font-medium flex items-center space-x-2 transition-colors cursor-pointer">
                   <span>🐤</span>
                   <span>Twitter</span>
                 </button>
@@ -240,9 +274,10 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3.5 rounded-2xl transition-colors flex items-center justify-center space-x-2 text-sm shadow-xs"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-medium py-3.5 rounded-2xl transition-colors flex items-center justify-center space-x-2 text-sm shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  <span>Send Message</span>
+                  <span>{isSubmitting ? 'Sending Message...' : 'Send Message'}</span>
                   <span>→</span>
                 </button>
               </form>
@@ -273,7 +308,7 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
                 <button
                   type="button"
                   onClick={() => toggleFaq(index)}
-                  className="w-full px-6 py-5 text-left flex justify-between items-center space-x-4 focus:outline-none"
+                  className="w-full px-6 py-5 text-left flex justify-between items-center space-x-4 focus:outline-none cursor-pointer"
                 >
                   <span className="font-semibold text-stone-900 text-sm md:text-base">
                     {faq.question}
