@@ -3,20 +3,22 @@ import nodemailer from 'nodemailer';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// Railway IPv6 ETIMEDOUT ගැටලුව විසඳීමට direct IPv4 (family: 4) සහ Port 587 යෙදීම
+// Railway timeout වැළැක්වීමට Port 465 (Direct SSL) සහ socket timeouts යෙදීම
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // Port 587 සඳහා false විය යුතුය
+  port: 465,
+  secure: true, // Port 465 සඳහා true විය යුතුය
   auth: {
     user: process.env.EMAIL_USER || 'lumoraclothing15@gmail.com',
-    pass: process.env.EMAIL_PASS, // Railway Variables හි ඇති Gmail App Password එක
+    pass: process.env.EMAIL_PASS, // Gmail App Password එක
   },
   tls: {
     rejectUnauthorized: false,
   },
-  family: 4, // IPv4 පමණක් භාවිතා කිරීමට force කිරීම (Timeout වැළැක්වීමට)
-} as any);
+  connectionTimeout: 15000, // Connection timeout තත්පර 15කට සීමා කිරීම
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
+});
 
 // Email යැවීමේ Helper Function එක
 const sendPaymentStatusEmail = async (order: any, status: string) => {
