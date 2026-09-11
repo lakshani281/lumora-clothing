@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// Railway ENETUNREACH මඟහැරීමට Port 587 (STARTTLS) සහ direct host භාවිතා කිරීම
+// Railway IPv6 ETIMEDOUT ගැටලුව විසඳීමට direct IPv4 (family: 4) සහ Port 587 යෙදීම
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
@@ -15,7 +15,8 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-});
+  family: 4, // IPv4 පමණක් භාවිතා කිරීමට force කිරීම (Timeout වැළැක්වීමට)
+} as any);
 
 // Email යැවීමේ Helper Function එක
 const sendPaymentStatusEmail = async (order: any, status: string) => {
