@@ -44,7 +44,7 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
     {
       question: 'What payment methods do you accept?',
       answer:
-        'We accept bank transfers, credit/debit cards, and cash on delivery for orders under Rs. 10,000.',
+        'Currently, we accept Direct Bank Deposits and Online Transfers. You can upload your payment slip during checkout to confirm your order.',
     },
   ];
 
@@ -71,7 +71,6 @@ export const ContactPage: React.FC<ContactPageProps> = () => {
           Accept: 'application/json',
         },
         body: JSON.stringify({
-          // ඔබ Dashboard එකෙන් ලබාගත් Access Key එක මෙතැනට paste කරන්න
           access_key: '86fdd4a9-5bb6-4231-bd84-b97c39c2713e',
           name: formData.fullName,
           email: formData.email,
