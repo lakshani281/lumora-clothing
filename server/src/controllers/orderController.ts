@@ -1,6 +1,71 @@
 import { Response } from 'express';
+import nodemailer from 'nodemailer';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
+
+// Nodemailer Transporter සකස් කිරීම
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'lumoraclothing15@gmail.com',
+    pass: process.env.EMAIL_PASS, // Gmail App Password එක (.env එකෙන්)
+  },
+});
+
+// Email යැවීමේ Helper Function එක
+const sendPaymentStatusEmail = async (order: any, status: string) => {
+  const recipientEmail = order.customer?.email || order.shippingAddress?.email;
+  const customerName = order.customer?.name || order.shippingAddress?.name || 'Valued Customer';
+  const orderId = order._id.toString().slice(-6).toUpperCase();
+
+  if (!recipientEmail || recipientEmail === 'guest@lumora.lk') {
+    return;
+  }
+
+  let subject = '';
+  let htmlContent = '';
+
+  if (status === 'Verified') {
+    subject = `Payment Verified - Order #${orderId} | Lumora Clothing`;
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">
+        <h2 style="color: #1b5e3f;">Payment Confirmed!</h2>
+        <p>Dear <strong>${customerName}</strong>,</p>
+        <p>We are pleased to inform you that your bank transfer for Order <strong>#${orderId}</strong> has been successfully verified.</p>
+        <p><strong>Total Amount:</strong> Rs. ${order.totalAmount?.toLocaleString()}</p>
+        <p>Your items are now being prepared for island-wide delivery. You will receive standard delivery within 3–5 business days.</p>
+        <br/>
+        <p>Thank you for choosing <strong>Lumora Clothing</strong>!</p>
+      </div>
+    `;
+  } else if (status === 'Rejected') {
+    subject = `Payment Issue - Order #${orderId} | Lumora Clothing`;
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; rounded: 10px;">
+        <h2 style="color: #c53030;">Payment Verification Failed</h2>
+        <p>Dear <strong>${customerName}</strong>,</p>
+        <p>We encountered an issue verifying the bank deposit slip uploaded for Order <strong>#${orderId}</strong>.</p>
+        <p>Please contact our support team or reply to this email with a clear copy of your transfer receipt to proceed with fulfillment.</p>
+        <p>WhatsApp / Call Support: <strong>+94 714262874</strong></p>
+        <br/>
+        <p>Regards,<br/>Lumora Clothing Team</p>
+      </div>
+    `;
+  } else {
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Lumora Clothing" <${process.env.EMAIL_USER || 'lumoraclothing15@gmail.com'}>`,
+      to: recipientEmail,
+      subject,
+      html: htmlContent,
+    });
+  } catch (err) {
+    console.error('Failed to send status email:', err);
+  }
+};
 
 // @desc    Create New Order with Payment Slip (Guest or Logged-in)
 // @route   POST /api/orders
@@ -32,7 +97,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       status: 'Pending',
     };
 
-    // User logged in නම් පමණක් user ID එක assign කරයි
     if (req.user?.id) {
       orderData.user = req.user.id;
     }
@@ -106,6 +170,9 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
       res.status(404).json({ message: 'Order not found' });
       return;
     }
+
+    // Email එක පසුබිමෙන් ස්වයංක්‍රීයව Customer වෙත යවයි
+    sendPaymentStatusEmail(order, paymentStatus);
 
     res.json({ success: true, message: 'Payment status updated', order });
   } catch (error: any) {
