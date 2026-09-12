@@ -1,31 +1,16 @@
 import { Response } from 'express';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// Railway timeout වැළැක්වීමට Port 465 (Direct SSL) සහ socket timeouts යෙදීම
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // Port 465 සඳහා true විය යුතුය
-  auth: {
-    user: process.env.EMAIL_USER || 'lumoraclothing15@gmail.com',
-    pass: process.env.EMAIL_PASS, // Gmail App Password එක
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 15000,
-});
+// Resend HTTP Client එක initialize කිරීම (Port blocks කිසිවක් බලනොපායි)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email යැවීමේ Helper Function එක
 const sendPaymentStatusEmail = async (order: any, status: string) => {
   const orderId = order._id ? order._id.toString().slice(-6).toUpperCase() : 'UNKNOWN';
 
-  // Email එක ලබාගත හැකි සියලුම තැන් පරීක්ෂා කිරීම
-  let recipientEmail =
+  const recipientEmail =
     order.shippingAddress?.email ||
     order.customer?.email ||
     (order.user && typeof order.user === 'object' ? order.user.email : null);
@@ -36,14 +21,6 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
     (order.user && typeof order.user === 'object' ? order.user.name : null) ||
     'Valued Customer';
 
-  console.log(`[Order #${orderId}] Checking recipient details:`, {
-    customerEmail: order.customer?.email,
-    shippingEmail: order.shippingAddress?.email,
-    userEmail: order.user && typeof order.user === 'object' ? order.user.email : null,
-    resolvedRecipient: recipientEmail,
-  });
-
-  // සැබෑ email එකක් නැත්නම් log එකක් දමා නතර කිරීම
   if (!recipientEmail || recipientEmail === 'guest@lumora.lk') {
     console.log(`❌ [Order #${orderId}] Skipped: No valid external recipient email found.`);
     return;
@@ -83,14 +60,21 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   }
 
   try {
-    console.log(`[Order #${orderId}] Attempting to dispatch email to: ${recipientEmail}...`);
-    const info = await transporter.sendMail({
-      from: `"Lumora Clothing" <${process.env.EMAIL_USER || 'lumoraclothing15@gmail.com'}>`,
+    console.log(`[Order #${orderId}] Dispatching email via Resend API to: ${recipientEmail}...`);
+    
+    // Testing සඳහා onboarding@resend.dev භාවිතා කළ හැක (තමන්ගේම domain එකක් නැතිවිට)
+    const { data, error } = await resend.emails.send({
+      from: 'Lumora Clothing <onboarding@resend.dev>',
       to: recipientEmail,
       subject,
       html: htmlContent,
     });
-    console.log(`✓ [Order #${orderId}] Status email sent successfully to: ${recipientEmail} (Msg ID: ${info.messageId})`);
+
+    if (error) {
+      console.error(`❌ [Order #${orderId}] Resend API Error:`, error);
+    } else {
+      console.log(`✓ [Order #${orderId}] Status email successfully delivered via Resend! (ID: ${data?.id})`);
+    }
   } catch (err) {
     console.error(`❌ [Order #${orderId}] Failed to send status email:`, err);
   }
@@ -188,9 +172,8 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 // @route   PATCH /api/orders/:id/payment-status
 export const updatePaymentStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { paymentStatus } = req.body; // 'Verified' | 'Rejected' | 'Pending Verification'
+    const { paymentStatus } = req.body;
     
-    // User විස්තරද සහිතව order එක update කිරීම
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { paymentStatus },
@@ -202,7 +185,6 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
-    // Email එක background එකෙන් යැවීම
     sendPaymentStatusEmail(order, paymentStatus);
 
     res.json({ success: true, message: 'Payment status updated', order });
