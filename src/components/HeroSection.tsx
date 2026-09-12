@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Heart, ShoppingBag, User as UserIcon, LogOut } from 'lucide-react';
+import { Heart, ShoppingBag, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { useCart } from '../context/CartContext';
 
@@ -9,7 +9,7 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ setCurrentPage }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role?: string } | null>(null);
   const { totalItemsCount, setIsCartOpen } = useCart();
 
   useEffect(() => {
@@ -61,14 +61,43 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ setCurrentPage }) => {
             <button onClick={() => setCurrentPage('contact')} className="text-white hover:text-amber-400 transition">Contact</button>
           </div>
 
-          <div className="flex items-center space-x-5 text-white/90">
-            <button className="hover:text-amber-400 transition" title="Search"><Search size={18} /></button>
-            <button className="hover:text-amber-400 transition" title="Wishlist"><Heart size={18} /></button>
+          <div className="flex items-center space-x-4 md:space-x-5 text-white/90">
+            {/* Admin Portal Button (If Admin) */}
+            {user && user.role === 'admin' && (
+              <button
+                onClick={() => setCurrentPage('admin')}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#1b5e3f] hover:bg-[#14472f] text-white transition shadow-sm"
+                title="Admin Portal"
+              >
+                <ShieldCheck size={14} />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            )}
+
+            {/* Search Icon එක වෙනුවට Profile Icon එක */}
+            <button 
+              onClick={() => {
+                if (user) {
+                  setCurrentPage('profile');
+                } else {
+                  setIsAuthOpen(true);
+                }
+              }}
+              className="hover:text-amber-400 transition p-1" 
+              title={user ? 'My Profile & Orders' : 'Login to view orders'}
+            >
+              <UserIcon size={18} />
+            </button>
+
+            {/* Wishlist Button */}
+            <button className="hover:text-amber-400 transition p-1" title="Wishlist">
+              <Heart size={18} />
+            </button>
             
             {/* Cart Button */}
             <button 
               onClick={() => setIsCartOpen(true)} 
-              className="hover:text-amber-400 transition relative"
+              className="hover:text-amber-400 transition relative p-1"
               title="Cart"
             >
               <ShoppingBag size={18} />
@@ -79,18 +108,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ setCurrentPage }) => {
               )}
             </button>
 
+            {/* User Account State */}
             {user ? (
               <div className="flex items-center space-x-2 pl-2 border-l border-white/20">
-                <span className="text-xs font-semibold text-amber-400 hidden sm:inline">
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className="text-xs font-semibold text-amber-400 hover:underline hidden sm:inline"
+                  title="View Profile"
+                >
                   Hi, {user.name.split(' ')[0]}
-                </span>
-                <button onClick={handleLogout} className="hover:text-red-400 transition" title="Logout">
+                </button>
+                <button onClick={handleLogout} className="hover:text-red-400 transition p-1" title="Logout">
                   <LogOut size={16} />
                 </button>
               </div>
             ) : (
-              <button onClick={() => setIsAuthOpen(true)} className="hover:text-amber-400 transition flex items-center space-x-1" title="Login">
-                <UserIcon size={18} />
+              <button 
+                onClick={() => setIsAuthOpen(true)} 
+                className="hover:text-amber-400 transition flex items-center space-x-1" 
+                title="Login / Register"
+              >
                 <span className="text-xs font-semibold hidden sm:inline">Login</span>
               </button>
             )}
