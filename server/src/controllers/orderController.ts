@@ -15,29 +15,37 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-  connectionTimeout: 15000, // Connection timeout තත්පර 15කට සීමා කිරීම
+  connectionTimeout: 15000,
   greetingTimeout: 15000,
   socketTimeout: 15000,
 });
 
 // Email යැවීමේ Helper Function එක
 const sendPaymentStatusEmail = async (order: any, status: string) => {
-  // Order එකේ customer, shippingAddress හෝ user populate වී ඇති email එක ලබා ගැනීම
-  const recipientEmail =
-    order.customer?.email ||
+  const orderId = order._id ? order._id.toString().slice(-6).toUpperCase() : 'UNKNOWN';
+
+  // Email එක ලබාගත හැකි සියලුම තැන් පරීක්ෂා කිරීම
+  let recipientEmail =
     order.shippingAddress?.email ||
+    order.customer?.email ||
     (order.user && typeof order.user === 'object' ? order.user.email : null);
 
   const customerName =
-    order.customer?.name ||
     order.shippingAddress?.name ||
+    order.customer?.name ||
     (order.user && typeof order.user === 'object' ? order.user.name : null) ||
     'Valued Customer';
 
-  const orderId = order._id.toString().slice(-6).toUpperCase();
+  console.log(`[Order #${orderId}] Checking recipient details:`, {
+    customerEmail: order.customer?.email,
+    shippingEmail: order.shippingAddress?.email,
+    userEmail: order.user && typeof order.user === 'object' ? order.user.email : null,
+    resolvedRecipient: recipientEmail,
+  });
 
+  // සැබෑ email එකක් නැත්නම් log එකක් දමා නතර කිරීම
   if (!recipientEmail || recipientEmail === 'guest@lumora.lk') {
-    console.log(`No valid recipient email found for Order #${orderId}`);
+    console.log(`❌ [Order #${orderId}] Skipped: No valid external recipient email found.`);
     return;
   }
 
@@ -75,15 +83,16 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   }
 
   try {
+    console.log(`[Order #${orderId}] Attempting to dispatch email to: ${recipientEmail}...`);
     const info = await transporter.sendMail({
       from: `"Lumora Clothing" <${process.env.EMAIL_USER || 'lumoraclothing15@gmail.com'}>`,
       to: recipientEmail,
       subject,
       html: htmlContent,
     });
-    console.log(`✓ Status email sent successfully to: ${recipientEmail} (Msg ID: ${info.messageId})`);
+    console.log(`✓ [Order #${orderId}] Status email sent successfully to: ${recipientEmail} (Msg ID: ${info.messageId})`);
   } catch (err) {
-    console.error('Failed to send status email:', err);
+    console.error(`❌ [Order #${orderId}] Failed to send status email:`, err);
   }
 };
 
@@ -181,7 +190,7 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response): Prom
   try {
     const { paymentStatus } = req.body; // 'Verified' | 'Rejected' | 'Pending Verification'
     
-    // User විස්තරද සහිතව order එක සොයා update කිරීම
+    // User විස්තරද සහිතව order එක update කිරීම
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { paymentStatus },
