@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Heart, ShoppingBag, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
+import { Heart, ShoppingBag, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { useCart } from '../context/CartContext';
 
@@ -28,7 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
     localStorage.removeItem('lumora_token');
     localStorage.removeItem('lumora_user');
     setUser(null);
-    if (currentPage === 'admin') {
+    if (currentPage === 'admin' || currentPage === 'profile') {
       setCurrentPage('home');
     }
   };
@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
           {/* Right: Action Icons */}
           <div className="flex items-center space-x-4 md:space-x-5 text-gray-800">
             
-            {/* User 'admin' ලෙස Login වී ඇත්නම් පමණක් Admin Button එක පෙන්වයි */}
+            {/* Admin Portal Button */}
             {user && user.role === 'admin' && (
               <button
                 onClick={() => setCurrentPage('admin')}
@@ -96,10 +96,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
               </button>
             )}
 
-            <button className="hover:text-emerald-800 transition p-1" title="Search">
-              <Search size={20} strokeWidth={1.8} />
+            {/* Search Icon එක වෙනුවට Profile / Orders Button එක */}
+            <button
+              onClick={() => {
+                if (user) {
+                  setCurrentPage('profile');
+                } else {
+                  setIsAuthOpen(true);
+                }
+              }}
+              className={`p-1 transition rounded-full hover:text-emerald-800 ${
+                currentPage === 'profile' ? 'text-[#1b5e3f]' : 'text-gray-800'
+              }`}
+              title={user ? 'My Profile & Orders' : 'Login to view orders'}
+            >
+              <UserIcon size={20} strokeWidth={1.8} />
             </button>
 
+            {/* Wishlist Button */}
             <button className="hover:text-emerald-800 transition p-1 relative" title="Wishlist">
               <Heart size={20} strokeWidth={1.8} />
             </button>
@@ -121,9 +135,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
             {/* User Account State */}
             {user ? (
               <div className="flex items-center space-x-2 pl-2 border-l border-stone-300">
-                <span className="text-xs font-semibold text-stone-800 hidden sm:inline">
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className="text-xs font-semibold text-stone-800 hover:text-[#1b5e3f] transition hidden sm:inline"
+                  title="View Profile"
+                >
                   Hi, {user.name.split(' ')[0]}
-                </span>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="text-stone-500 hover:text-red-600 transition p-1"
@@ -138,7 +156,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, setCurrentPage }) =
                 className="hover:text-emerald-800 transition p-1 flex items-center space-x-1"
                 title="Login / Register"
               >
-                <UserIcon size={20} strokeWidth={1.8} />
                 <span className="text-xs font-semibold hidden sm:inline">Login</span>
               </button>
             )}
