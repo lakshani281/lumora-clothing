@@ -12,14 +12,16 @@ import { BulkOrdersPage } from './pages/BulkOrdersPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { ContactPage } from './pages/ContactPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { ProfilePage } from './pages/ProfilePage.tsx';
 import { CartProvider } from './context/CartContext';
 import { CartDrawer } from './components/CartDrawer';
 
 const App: React.FC = () => {
-  // Browser URL එක /admin ද කියා ආරම්භයේදීම හඳුනා ගැනීම
+  // Browser URL එකෙන් ආරම්භක page එක හඳුනා ගැනීම
   const getInitialPage = () => {
     const path = window.location.pathname.replace('/', '');
     if (path === 'admin') return 'admin';
+    if (path === 'profile') return 'profile';
     if (path === 'products') return 'products';
     if (path === 'bulk-orders') return 'bulk-orders';
     if (path === 'about-us') return 'about-us';
@@ -29,11 +31,17 @@ const App: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState<string>(getInitialPage());
 
-  // URL එක වෙනස් වන විට page එක update කිරීම
+  // URL වෙනස් වන විට (Browser Back/Forward buttons) page එක update කිරීම
   useEffect(() => {
     const handleLocationChange = () => {
       const path = window.location.pathname.replace('/', '');
       if (path === 'admin') setCurrentPage('admin');
+      else if (path === 'profile') setCurrentPage('profile');
+      else if (path === 'products') setCurrentPage('products');
+      else if (path === 'bulk-orders') setCurrentPage('bulk-orders');
+      else if (path === 'about-us') setCurrentPage('about-us');
+      else if (path === 'contact') setCurrentPage('contact');
+      else setCurrentPage('home');
     };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
@@ -87,6 +95,13 @@ const App: React.FC = () => {
             </main>
           )}
 
+          {/* Profile & My Orders View */}
+          {currentPage === 'profile' && (
+            <main>
+              <ProfilePage />
+            </main>
+          )}
+
           {/* Admin Dashboard View */}
           {currentPage === 'admin' && (
             <main>
@@ -100,7 +115,8 @@ const App: React.FC = () => {
             currentPage !== 'bulk-orders' &&
             currentPage !== 'about-us' &&
             currentPage !== 'contact' &&
-            currentPage !== 'admin' && (
+            currentPage !== 'admin' &&
+            currentPage !== 'profile' && (
               <div className="max-w-7xl mx-auto px-6 py-24 text-center">
                 <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2 capitalize">
                   {currentPage.replace('-', ' ')}
