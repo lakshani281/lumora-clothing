@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import { Order } from '../models/Order.js';
 import { AuthRequest } from '../middleware/auth.js';
 
-// Resend HTTP Client එක initialize කිරීම (Port blocks කිසිවක් බලනොපායි)
+// Resend HTTP Client එක initialize කිරීම
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email යැවීමේ Helper Function එක
@@ -62,7 +62,6 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
   try {
     console.log(`[Order #${orderId}] Dispatching email via Resend API to: ${recipientEmail}...`);
     
-    // Testing සඳහා onboarding@resend.dev භාවිතා කළ හැක (තමන්ගේම domain එකක් නැතිවිට)
     const { data, error } = await resend.emails.send({
       from: 'Lumora Clothing <onboarding@resend.dev>',
       to: recipientEmail,
@@ -84,7 +83,7 @@ const sendPaymentStatusEmail = async (order: any, status: string) => {
 // @route   POST /api/orders
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { customer, orderItems, shippingAddress, totalAmount, paymentSlip } = req.body;
+    const { customer, orderItems, shippingAddress, totalAmount, paymentSlip, user } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       res.status(400).json({ message: 'No order items provided' });
@@ -95,6 +94,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       res.status(400).json({ message: 'Payment slip is required to place an order' });
       return;
     }
+
+    // Token එකෙන් හෝ Body එකෙන් user ID එක නිවැරදිව හඳුනා ගැනීම
+    const resolvedUserId = req.user?.id || (req.user as any)?._id || user;
 
     const orderData: any = {
       customer: customer || {
@@ -110,8 +112,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       status: 'Pending',
     };
 
-    if (req.user?.id) {
-      orderData.user = req.user.id;
+    if (resolvedUserId) {
+      orderData.user = resolvedUserId;
     }
 
     const order = await Order.create(orderData);
@@ -126,7 +128,23 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 // @route   GET /api/orders/myorders
 export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const orders = await Order.find({ user: req.user?.id }).sort({ createdAt: -1 });
+    const userId = req.user?.id || (req.user as any)?._id;
+    const userEmail = (req.user as any)?.email;
+
+    // User ID එකෙන් මෙන්ම User ගේ Email එකෙන්ද database එකේ match කිරීම
+    const queryConditions: any[] = [];
+    if (userId) {
+      queryConditions.push({ user: userId });
+    }
+    if (userEmail) {
+      queryConditions.push({ 'customer.email': userEmail });
+      queryConditions.push({ 'shippingAddress.email': userEmail });
+    }
+
+    const orders = await Order.find(
+      queryConditions.length > 0 ? { $or: queryConditions } : { user: userId }
+    ).sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
