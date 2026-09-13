@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IOrderItem {
-  product: Types.ObjectId | string;
+  product?: Types.ObjectId | string;
   title: string;
   quantity: number;
   price: number;
@@ -25,10 +25,11 @@ export interface IOrder extends Document {
   };
   totalAmount: number;
   paymentMethod: 'Bank Transfer';
-  paymentSlip: string; // Receipt / Slip image එක (Base64 හෝ URL)
+  paymentSlip: string; // Receipt / Slip image (Base64 or URL)
   paymentStatus: 'Pending Verification' | 'Verified' | 'Rejected';
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: Date;
+  updatedAt: Date;
 }
 
 const orderSchema: Schema<IOrder> = new Schema(
@@ -37,10 +38,11 @@ const orderSchema: Schema<IOrder> = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: false,
+      index: true, // User ID එකෙන් orders සෙවීම වේගවත් කිරීමට
     },
     customer: {
-      name: { type: String, required: true },
-      email: { type: String, required: true },
+      name: { type: String, required: true, trim: true },
+      email: { type: String, required: true, trim: true, lowercase: true, index: true }, // Email query සඳහා index එකක්
     },
     orderItems: [
       {
@@ -49,23 +51,24 @@ const orderSchema: Schema<IOrder> = new Schema(
           ref: 'Product',
           required: false,
         },
-        title: { type: String, required: true },
-        quantity: { type: Number, required: true },
-        price: { type: Number, required: true },
+        title: { type: String, required: true, trim: true },
+        quantity: { type: Number, required: true, min: 1 },
+        price: { type: Number, required: true, min: 0 },
         size: { type: String, required: true },
-        color: { type: String },
+        color: { type: String, default: 'Standard' },
         image: { type: String, required: true },
       },
     ],
     shippingAddress: {
-      address: { type: String, required: true },
-      city: { type: String, required: true },
-      postalCode: { type: String, required: true },
-      phone: { type: String, required: true },
+      address: { type: String, required: true, trim: true },
+      city: { type: String, required: true, trim: true },
+      postalCode: { type: String, required: true, trim: true },
+      phone: { type: String, required: true, trim: true },
     },
     totalAmount: {
       type: Number,
       required: true,
+      min: 0,
     },
     paymentMethod: {
       type: String,
@@ -73,7 +76,7 @@ const orderSchema: Schema<IOrder> = new Schema(
     },
     paymentSlip: {
       type: String,
-      required: true, // Slip එක අනිවාර්යයි
+      required: true,
     },
     paymentStatus: {
       type: String,
@@ -90,5 +93,9 @@ const orderSchema: Schema<IOrder> = new Schema(
     timestamps: true,
   }
 );
+
+// Compound Index එකක්: User ID සහ Email මඟින් sort කිරීම පහසු කිරීමට
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ 'customer.email': 1, createdAt: -1 });
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);
