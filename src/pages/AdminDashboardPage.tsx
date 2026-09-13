@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Package, ShoppingBag, Layers, RefreshCw, ShoppingCart } from 'lucide-react';
+import { Plus, Trash2, Package, ShoppingBag, Layers, RefreshCw, ShoppingCart, UploadCloud, Image as ImageIcon, X } from 'lucide-react';
 import API from '../services/api';
 import { AdminOrders } from '../components/AdminOrders';
 
@@ -26,9 +26,13 @@ export const AdminDashboardPage: React.FC = () => {
     category: 'men',
     fabric: '100% Cotton',
     stock: '',
-    imageUrl: '',
     sizes: ['S', 'M', 'L', 'XL'],
   });
+
+  // Product Image Upload State (Base64)
+  const [productImage, setProductImage] = useState<string>('');
+  const [fileName, setFileName] = useState<string>('');
+
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -48,6 +52,28 @@ export const AdminDashboardPage: React.FC = () => {
     fetchProducts();
   }, []);
 
+  // Image Upload Handler
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit. Please upload a smaller image.');
+        return;
+      }
+      setFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProductImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setProductImage('');
+    setFileName('');
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
@@ -64,8 +90,14 @@ export const AdminDashboardPage: React.FC = () => {
 
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     setMessage(null);
+
+    if (!productImage) {
+      setMessage({ type: 'error', text: 'Please select an image for the product.' });
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       const token = localStorage.getItem('lumora_token') || localStorage.getItem('token');
@@ -76,7 +108,7 @@ export const AdminDashboardPage: React.FC = () => {
         category: formData.category,
         fabric: formData.fabric,
         stock: Number(formData.stock) || 10,
-        images: formData.imageUrl ? [formData.imageUrl] : ['/images/cat-men.jpg'],
+        images: [productImage],
         sizes: formData.sizes,
       };
 
@@ -84,7 +116,7 @@ export const AdminDashboardPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setMessage({ type: 'success', text: 'Product added successfully!' });
+      setMessage({ type: 'success', text: 'Product published successfully!' });
       setFormData({
         title: '',
         description: '',
@@ -92,9 +124,10 @@ export const AdminDashboardPage: React.FC = () => {
         category: 'men',
         fabric: '100% Cotton',
         stock: '',
-        imageUrl: '',
         sizes: ['S', 'M', 'L', 'XL'],
       });
+      setProductImage('');
+      setFileName('');
       fetchProducts();
       setActiveTab('products');
     } catch (err: any) {
@@ -122,7 +155,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex flex-wrap gap-2.5">
             <button
               onClick={() => setActiveTab('products')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'products'
                   ? 'bg-[#1b5e3f] text-white shadow-xs'
                   : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
@@ -132,7 +165,7 @@ export const AdminDashboardPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('orders')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'orders'
                   ? 'bg-[#1b5e3f] text-white shadow-xs'
                   : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
@@ -142,7 +175,7 @@ export const AdminDashboardPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('add-product')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${
+              className={`px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                 activeTab === 'add-product'
                   ? 'bg-[#1b5e3f] text-white shadow-xs'
                   : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-50'
@@ -162,7 +195,7 @@ export const AdminDashboardPage: React.FC = () => {
               </h2>
               <button
                 onClick={fetchProducts}
-                className="text-stone-500 hover:text-[#1b5e3f] text-xs flex items-center gap-1"
+                className="text-stone-500 hover:text-[#1b5e3f] text-xs flex items-center gap-1 cursor-pointer"
               >
                 <RefreshCw size={14} /> Refresh
               </button>
@@ -192,7 +225,7 @@ export const AdminDashboardPage: React.FC = () => {
                           <img
                             src={item.images?.[0] || '/images/cat-men.jpg'}
                             alt={item.title}
-                            className="w-10 h-10 object-cover rounded-lg bg-stone-100"
+                            className="w-10 h-10 object-cover rounded-lg bg-stone-100 border border-stone-200"
                           />
                           <span className="font-semibold text-stone-900 line-clamp-1">{item.title}</span>
                         </td>
@@ -225,7 +258,7 @@ export const AdminDashboardPage: React.FC = () => {
         {activeTab === 'add-product' && (
           <div className="bg-white rounded-2xl border border-stone-200 p-6 md:p-8 shadow-xs max-w-2xl mx-auto">
             <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">Create New T-Shirt Listing</h2>
-            <p className="text-xs text-stone-500 mb-6">Fill in the product details to publish to the catalog.</p>
+            <p className="text-xs text-stone-500 mb-6">Fill in the product details and select an image to publish to the catalog.</p>
 
             {message && (
               <div
@@ -318,20 +351,57 @@ export const AdminDashboardPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Direct Image Upload Box with Preview */}
               <div>
-                <label className="block font-semibold text-stone-700 mb-1.5">Image Path / URL</label>
-                <input
-                  type="text"
-                  placeholder="/images/cat-men.jpg (or web URL)"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#1b5e3f]"
-                />
+                <label className="block font-semibold text-stone-700 mb-1.5">
+                  Product Image <span className="text-red-500">*</span>
+                </label>
+
+                {productImage ? (
+                  <div className="relative border border-stone-200 rounded-2xl p-3 bg-stone-50 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={productImage}
+                        alt="Preview"
+                        className="w-16 h-16 object-cover rounded-xl border border-stone-200 shadow-2xs"
+                      />
+                      <div>
+                        <p className="font-semibold text-stone-800 text-xs truncate max-w-[200px]">
+                          {fileName || 'Product Image Selected'}
+                        </p>
+                        <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
+                          ✓ Ready to publish
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeSelectedImage}
+                      className="p-2 text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                      title="Remove image"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="border-2 border-dashed border-stone-300 hover:border-[#1b5e3f] rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition bg-stone-50/50 group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      required
+                    />
+                    <UploadCloud size={26} className="text-stone-400 group-hover:text-[#1b5e3f] transition mb-2" />
+                    <p className="text-xs font-semibold text-stone-700">Click to select product image</p>
+                    <p className="text-[10px] text-stone-400 mt-1">PNG, JPG or WebP (Max 5MB)</p>
+                  </label>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !productImage}
                 className="w-full bg-[#1b5e3f] hover:bg-[#14472f] text-white font-semibold py-3 rounded-xl transition shadow-xs mt-4 disabled:opacity-50 cursor-pointer"
               >
                 {submitting ? 'Publishing Product...' : 'Publish Product to Catalog'}
