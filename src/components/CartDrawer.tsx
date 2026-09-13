@@ -22,11 +22,20 @@ export const CartDrawer: React.FC = () => {
 
   if (!isCartOpen) return null;
 
-  const token = localStorage.getItem('lumora_token') || localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('lumora_user') || localStorage.getItem('user') || '{}');
+  // Real-time localStorage values
+  const getAuthToken = () => localStorage.getItem('lumora_token') || localStorage.getItem('token');
+  const getAuthUser = () => {
+    try {
+      const stored = localStorage.getItem('lumora_user') || localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
 
   const handleProceedToCheckout = () => {
-    if (!token) {
+    const currentToken = getAuthToken();
+    if (!currentToken) {
       setError('Please sign in to your account to complete the checkout.');
       return;
     }
@@ -54,7 +63,10 @@ export const CartDrawer: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (!token) {
+    const currentToken = getAuthToken();
+    const currentUser = getAuthUser();
+
+    if (!currentToken) {
       setError('Your session has expired. Please sign in again.');
       return;
     }
@@ -67,18 +79,21 @@ export const CartDrawer: React.FC = () => {
     setLoading(true);
 
     try {
+      // Backend එකට නිවැරදිව mapping වන data structure එක
       const orderData = {
+        user: currentUser?.id || currentUser?._id, // User link කිරීම
         customer: {
-          name: user?.name || 'Valued Customer',
-          email: user?.email || 'customer@lumora.lk',
+          name: currentUser?.name || 'Valued Customer',
+          email: currentUser?.email || 'customer@lumora.lk',
         },
         shippingAddress: { address, city, postalCode, phone },
         orderItems: cart.map((item) => ({
+          name: item.title,
           product: item.productId,
           title: item.title,
           quantity: item.quantity,
           price: item.price,
-          size: item.size,
+          size: item.size || 'M',
           color: item.color || 'Standard',
           image: item.image,
         })),
@@ -87,11 +102,15 @@ export const CartDrawer: React.FC = () => {
         paymentSlip: slipImage,
       };
 
+      // Axios instance හෝ fetch එක හරහා Bearer token එක නිශ්චිතවම යැවීම
       const response = await API.post('/orders', orderData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${currentToken}`,
+          'Content-Type': 'application/json'
+        },
       });
 
-      if (response.data.success || response.data.order) {
+      if (response.data) {
         setOrderSuccess(true);
         clearCart();
       }
@@ -102,6 +121,8 @@ export const CartDrawer: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const currentUser = getAuthUser();
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -138,7 +159,7 @@ export const CartDrawer: React.FC = () => {
                 <CheckCircle size={60} className="text-[#1b5e3f] mx-auto animate-bounce" />
                 <h3 className="text-xl font-serif font-bold text-stone-900">Order Placed Successfully!</h3>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  Thank you for shopping with Lumora Clothing. We have received your payment slip and will verify it before dispatching your package.
+                  Thank you for shopping with Lumora Clothing. We have received your payment slip and linked it to your account.
                 </p>
                 <button 
                   onClick={() => { 
@@ -157,8 +178,8 @@ export const CartDrawer: React.FC = () => {
                 
                 <div className="bg-stone-50 p-3 rounded-xl border border-stone-200/60">
                   <span className="text-[11px] text-stone-500 uppercase tracking-wider font-semibold block mb-0.5">Ordering As</span>
-                  <p className="text-xs font-bold text-stone-900">{user?.name || 'Customer'}</p>
-                  <p className="text-[11px] text-stone-600">{user?.email}</p>
+                  <p className="text-xs font-bold text-stone-900">{currentUser?.name || 'Customer'}</p>
+                  <p className="text-[11px] text-stone-600">{currentUser?.email}</p>
                 </div>
 
                 <div>
